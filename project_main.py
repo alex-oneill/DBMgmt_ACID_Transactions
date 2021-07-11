@@ -49,19 +49,22 @@ if conn:
         # NOTE: No autocommit to instill ATOMICITY
         conn.autocommit = False
 
-        # TODO: QUERY
-        cur.execute("""SELECT p.p_name
-                FROM product p, stock s
-                WHERE p.prod_id = s.prod_id
-                AND s.dep_id = 'd2';""")
-        # TODO: REMOVE THESE
-        data = cur.fetchall()
-        print(data)
+        cur.execute("""
+            ALTER TABLE Stock DROP CONSTRAINT stock_fk_dep_id;
+
+            ALTER TABLE Stock ADD CONSTRAINT dep_id_cascade
+            FOREIGN KEY(dep_id) REFERENCES Depot ON UPDATE CASCADE;
+            
+            UPDATE depot
+            SET dep_id = 'dd1'
+            WHERE dep_id = 'd1';
+            """)
     except (Exception, psycopg2.DatabaseError) as err:
         print(err)
         print("Transactions could not be completed so database will be rolled back before start of transactions")
         conn.rollback()
     finally:
+        # NOTE: Committed transaction = DURABILITY
         conn.commit()
         cur.close
         conn.close
